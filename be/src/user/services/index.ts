@@ -1,4 +1,8 @@
-import { TResetPassword, TUser, TUserResetPassword } from "./../Repository/user.types";
+import {
+  TResetPassword,
+  TUser,
+  TUserResetPassword,
+} from "./../Repository/user.types";
 import { TLoginSchema } from "../../schema/login.schema";
 import { TRegisterSchema } from "../../schema/user.schema";
 import {
@@ -37,8 +41,8 @@ export const siginUser = async (user: TLoginSchema["body"]) => {
       return { token, status, message };
     }
     return { status, message };
-  } catch (error) {
-    throw new Error("Failed to sign in user");
+  } catch (error: any) {
+    throw new Error(error.message);
   }
 };
 
@@ -46,16 +50,16 @@ export const getSingleUser = async (user: TUser) => {
   try {
     const response = await getUser(user);
     return response;
-  } catch (error) {
-    throw new Error("Failed to get user");
+  } catch (error: any) {
+    throw new Error(error.message);
   }
 };
-export const getUsers = async (user: TUser, filters?:any) => {
+export const getUsers = async (user: TUser, filters?: any) => {
   try {
     const response = await getAllUsers(user, filters);
     return response;
-  } catch (error) {
-    throw new Error("Failed to get user");
+  } catch (error: any) {
+    throw new Error(error.message);
   }
 };
 
@@ -93,41 +97,43 @@ export const getUserByEmail = async (email: string) => {
       return { status, message: "password reset email sent successfully" };
     }
     return { status, message };
-  } catch (error) {
-    throw new Error("Failed to get user");
+  } catch (error: any) {
+    throw new Error(error.message);
   }
 };
 
 export const editIndividualUser = async (
   user: TRegisterSchema["body"],
-  id: string,
+  id: string
 ) => {
   try {
     const { status, message, editedUser } = await editUser(user, id);
     return { status, message, editedUser };
-  } catch (error) {
-    throw new Error("Failed to edit user");
+  } catch (error: any) {
+    throw new Error(error.message);
   }
 };
 
-export const ResetPassword = async(user:TUserResetPassword, body:TResetPassword)=>{
+export const ResetPassword = async (
+  user: TUserResetPassword,
+  body: TResetPassword
+) => {
   try {
-      const result = await resetUserPassword(user, body)
-      return {status:result?.status as number, message:result?.message as string};
-      
-  } catch (error) {
-      throw new Error("Failed to reset password")
-      
+    const result = await resetUserPassword(user, body);
+    return {
+      status: result?.status as number,
+      message: result?.message as string,
+    };
+  } catch (error: any) {
+    throw new Error(error.message);
   }
-}
+};
 
-export const editUserProfile = async(id:string, imagePath:string)=>{
+export const editUserProfile = async (id: string, imagePath: string) => {
   try {
-    const {status, message, data} = await editProfileImage(id, imagePath)
-    return {status, message, data}
-  } catch (error) {
-    throw new Error("Failed to edit profile image")
-
-    
+    const { status, message, data } = await editProfileImage(id, imagePath);
+    return { status, message, data };
+  } catch (error: any) {
+    throw new Error(error.message);
   }
-}
+};

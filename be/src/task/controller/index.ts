@@ -1,143 +1,155 @@
-import { resetpassword } from './../../user/controller/index';
-import { Request, Response } from "express";
-import { fetchAllTasksAssignedByUser, fetchCompletedTasks, fetchCompletedTasksAssignedByUser, fetchDeletedTasks, fetchEditedTasks, fetchPendingTasks, fetchPendingTasksAssignedByUser, fetchSingleTask, fetchTask, postTask, searchSpecificTask } from "../services";
+import { resetpassword } from "./../../user/controller/index";
+import { NextFunction, Request, Response } from "express";
+import {
+  fetchAllTasksAssignedByUser,
+  fetchCompletedTasks,
+  fetchCompletedTasksAssignedByUser,
+  fetchDeletedTasks,
+  fetchEditedTasks,
+  fetchPendingTasks,
+  fetchPendingTasksAssignedByUser,
+  fetchSingleTask,
+  fetchTask,
+  postTask,
+  searchSpecificTask,
+} from "../services";
+import { catchAsync } from "../../utils/catchAsync";
+import { appError } from "../../utils/appError";
 
-export const createTask = async (req: Request, res: Response) => {
-  try {
+export const createTask = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const { status, message } = await postTask({ ...req.body });
+    if (status === 409) {
+      next(new appError(status, message));
+    }
     return res.status(status).json({ message: message });
-  } catch (error) {
-    res.status(400).json(error);
   }
-};
-export const getTask = async (req: Request, res: Response) => {
-  try {
+);
+export const getTask = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const user = res.locals.user;
-    const {priority, taskStatus, searchQuery } = req.query
-    const searchRegex = searchQuery ? new RegExp(searchQuery as string, "i") : undefined
-    
-    const filters = searchRegex ? {
-      title: searchRegex
-    }: {} 
+    const { priority, taskStatus, searchQuery } = req.query;
+    const searchRegex = searchQuery
+      ? new RegExp(searchQuery as string, "i")
+      : undefined;
 
+    const filters = searchRegex
+      ? {
+          title: searchRegex,
+        }
+      : {};
 
-    const { status, message, task } = await fetchTask(user, priority as string, taskStatus as string, filters);
+    const { status, message, task } = await fetchTask(
+      user,
+      priority as string,
+      taskStatus as string,
+      filters
+    );
+    if (status === 404) {
+      next(new appError(status, message));
+    }
     return res.status(status).json({ message: message, task: task });
-  } catch (error) {
-    res.status(400).json(error);
   }
-};
-export const getCompletedTasks = async (req: Request, res: Response) => {
-  try {
+);
+
+export const getCompletedTasks = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const user = res.locals.user;
 
     const { status, message, tasks } = await fetchCompletedTasks(user);
+    if (status === 404) {
+      next(new appError(status, "No tasks has been completed"));
+    }
     return res.status(status).json({ message: message, task: tasks });
-  } catch (error) {
-    res.status(400).json(error);
   }
-};
+);
 
-export const getPendingTasks = async(req:Request, res:Response)=>{
-  try {
+export const getPendingTasks = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const user = res.locals.user;
-    const {status, message, tasks} = await fetchPendingTasks(user)
-    return res.status(status).json({message: message, task: tasks})
-
-  } catch (error) {
-    
+    const { status, message, tasks } = await fetchPendingTasks(user);
+    if (status === 404) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message, task: tasks });
   }
-}
+);
 
-
-export const getEditedTasks = async(req:Request, res:Response)=>{
-  try {
-    const {id} = req.params
-    const {status, message, data} = await fetchEditedTasks(id,req.body) 
-    return res.status(status).json({ message: message, data:data });
-
-
-    
-  } catch (error) {
-    res.status(400).json(error);
-    
+export const getEditedTasks = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { status, message, data } = await fetchEditedTasks(id, req.body);
+    if (status === 404 || status === 400) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message, data: data });
   }
-}
+);
 
-export const getDeletedTask = async(req:Request, res:Response)=>{
-  try {
-    const {id} = req.params
-    const {status, message} = await fetchDeletedTasks(id)
-    return res.status(status).json({message: message})
-    
-  } catch (error) {
-    res.status(400).json(error)
-    
+export const getDeletedTask = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { status, message } = await fetchDeletedTasks(id);
+    if (status === 404 || status === 400) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message });
   }
-}
+);
 
-
-export const getSingleTask = async(req:Request, res:Response)=>{
-  try {
-    const {id} = req.params
-    const {status,message,data} = await fetchSingleTask(id)
-    return res.status(status).json({message: message, data:data})
-
-
-    
-  } catch (error) {
-    res.status(404).json(error)
-    
+export const getSingleTask = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { status, message, data } = await fetchSingleTask(id);
+    if (status === 404) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message, data: data });
   }
-}
+);
 
-export const getPendingTasksAssignedByUser = async(req:Request, res:Response) => {
-  try {
+export const getPendingTasksAssignedByUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const user = res.locals.user;
-    const {status, message, data} = await fetchPendingTasksAssignedByUser(user)
-    return res.status(status).json({message: message, data:data})
-
-
-  } catch (error) {
-    res.status(404).json(error)
-    
+    const { status, message, data } = await fetchPendingTasksAssignedByUser(
+      user
+    );
+    if (status === 404) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message, data: data });
   }
-}
-export const getCompletedTasksAssignedByUser = async(req:Request, res:Response) => {
-  try {
+);
+export const getCompletedTasksAssignedByUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const user = res.locals.user;
-    const {status, message, data} = await fetchCompletedTasksAssignedByUser(user)
-    return res.status(status).json({message: message, data:data})
-
-
-  } catch (error) {
-    res.status(404).json(error)
-    
+    const { status, message, data } = await fetchCompletedTasksAssignedByUser(
+      user
+    );
+    if (status === 404) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message, data: data });
   }
-}
-export const getAllTasksAssignedByUser = async(req:Request, res:Response) => {
-  try {
+);
+export const getAllTasksAssignedByUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const user = res.locals.user;
-    const {status, message, data} = await fetchAllTasksAssignedByUser(user)
-    return res.status(status).json({message: message, data:data})
-
-
-  } catch (error) {
-    res.status(404).json(error)
-    
+    const { status, message, data } = await fetchAllTasksAssignedByUser(user);
+    if (status === 404) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message, data: data });
   }
-}
+);
 
-export const searchTask = async(req:Request, res:Response)=>{
-  try {
-    const {q} = req.query
-    const {status, message, data} = await searchSpecificTask(q as string)
-    return res.status(status).json({message: message, data:data})
-
-
-    
-  } catch (error) {
-    res.status(404).json(error)
-    
+export const searchTask = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { q } = req.query;
+    const { status, message, data } = await searchSpecificTask(q as string);
+    if (status === 404) {
+      next(new appError(status, message));
+    }
+    return res.status(status).json({ message: message, data: data });
   }
-}
+);
