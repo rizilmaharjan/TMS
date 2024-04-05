@@ -4,7 +4,7 @@ import { TUser } from "../../user/Repository/user.types";
 export const createTask = async (task: TTaskSchema["body"]) => {
   try {
     const { title, dueDate } = task;
-    
+
     const loweredCasedTitle = title.toLowerCase();
     const existingTask = await taskModel.findOne({
       title: loweredCasedTitle,
@@ -16,26 +16,38 @@ export const createTask = async (task: TTaskSchema["body"]) => {
     const newTask = new taskModel(task);
     await newTask.save();
     return { status: 201, message: "Task created successfully" };
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
 };
 
-export const getTask = async (user: TUser, priority?:string, status?:string, filters?: any) => {
+export const getTask = async (
+  user: TUser,
+  priority?: string,
+  status?: string,
+  filters?: any
+) => {
   try {
     const { username } = user;
-    console.log("priority", priority)
-    console.log("filters", filters)
-    console.log("status",status)
-    const fetchTasks = await taskModel.find({ assignedTo: username,...(status?{status}:{}),...(priority?{priority}:{}), ...(filters ? filters : {})  });
+    console.log("priority", priority);
+    console.log("filters", filters);
+    console.log("status", status);
+    const fetchTasks = await taskModel.find({
+      assignedTo: username,
+      ...(status ? { status } : {}),
+      ...(priority ? { priority } : {}),
+      ...(filters ? filters : {}),
+    });
     if (!fetchTasks) return { status: 404, message: "Tasks not assigned" };
     return {
       status: 200,
       message: "Tasks fetched successfully",
       task: fetchTasks,
     };
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
 };
 
@@ -53,8 +65,9 @@ export const getCompletedTasks = async (user: TUser) => {
       message: "Completed tasks fetched successfully",
       tasks: fetchCompletedTasks,
     };
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
 };
 
@@ -72,8 +85,9 @@ export const pendingTasks = async (user: TUser) => {
       message: "Pending tasks fetched successfully",
       tasks: fetchPendingTasks,
     };
-  } catch (error) {
-    return { status: 500, message: "Internal server error"};
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error"};
   }
 };
 
@@ -92,9 +106,14 @@ export const editTask = async (
     );
     if (!editedTask)
       return { status: 400, message: "Failed to update the task" };
-    return { status: 200, message: "Task updated successfully", data:editedTask };
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
+    return {
+      status: 200,
+      message: "Task updated successfully",
+      data: editedTask,
+    };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
 };
 
@@ -106,92 +125,98 @@ export const deleteTask = async (taskId: string) => {
     if (!deleteTask)
       return { status: 400, message: "Task could not be deleted" };
     return { status: 200, message: "Task deleted successfully" };
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
 };
 
-export const getSingleTask = async(taskId: string)=>{
+export const getSingleTask = async (taskId: string) => {
+  console.log("task id", taskId);
   try {
+    console.log("i am inside try block");
     const existingTask = await taskModel.findById(taskId);
-    if(!existingTask) return {status: 404, message:"Task not found"}
-    return {status: 200, message: "Task fetched successfully", data:existingTask}
-    
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
-
-
-    
+    console.log("i am inside try block 2");
+    if (!existingTask) return { status: 404, message: "Task not found" };
+    return {
+      status: 200,
+      message: "Task fetched successfully",
+      data: existingTask,
+    };
+  } catch (error: any) {
+    // console.log("fetch single task", error);
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
-}
+};
 
-export const getPendingTasksAssignedByUser = async(user:TUser)=>{
+export const getPendingTasksAssignedByUser = async (user: TUser) => {
   try {
     const { username } = user;
     const pendingTasks = await taskModel.find({
       assignedBy: username,
-      status: "pending"
-    })
-    if(!pendingTasks) return {status: 404, message:"Pending Tasks not found"}
-    return {status: 200, message: "Tasks fetched successfully", data:pendingTasks}
-
-    
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
-
-
-    
+      status: "pending",
+    });
+    if (!pendingTasks)
+      return { status: 404, message: "Pending Tasks not found" };
+    return {
+      status: 200,
+      message: "Tasks fetched successfully",
+      data: pendingTasks,
+    };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
-}
-export const getCompletedTasksAssignedByUser = async(user:TUser)=>{
+};
+export const getCompletedTasksAssignedByUser = async (user: TUser) => {
   try {
     const { username } = user;
     const pendingTasks = await taskModel.find({
       assignedBy: username,
-      status: "completed"
-    })
-    if(!pendingTasks) return {status: 404, message:"Pending Tasks not found"}
-    return {status: 200, message: "Tasks fetched successfully", data:pendingTasks}
-
-    
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
-
-
-    
+      status: "completed",
+    });
+    if (!pendingTasks)
+      return { status: 404, message: "Pending Tasks not found" };
+    return {
+      status: 200,
+      message: "Tasks fetched successfully",
+      data: pendingTasks,
+    };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
-}
-export const getAllTasksAssignedByUser = async(user:TUser)=>{
+};
+export const getAllTasksAssignedByUser = async (user: TUser) => {
   try {
     const { username } = user;
     const pendingTasks = await taskModel.find({
       assignedBy: username,
-    })
-    if(!pendingTasks) return {status: 404, message:"Tasks not found"}
-    return {status: 200, message: "Tasks fetched successfully", data:pendingTasks}
-
-    
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
-
-
-    
+    });
+    if (!pendingTasks) return { status: 404, message: "Tasks not found" };
+    return {
+      status: 200,
+      message: "Tasks fetched successfully",
+      data: pendingTasks,
+    };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
-}
+};
 
-export const searchTask = async(q:string)=>{
+export const searchTask = async (q: string) => {
   try {
-    if(!q) return {status: 404, message:"Task not found"}
+    if (!q) return { status: 404, message: "Task not found" };
     const searchResults = await taskModel.find({
-      title: {$regex: new RegExp(q, "i")}
-
-    })
-    if(searchResults.length === 0) return {status: 404, message:"Task not found", data:[]}
-    return {status: 200, message:"Search result found", data:searchResults}
-
-    
-  } catch (error) {
-    return {status: 500, message: "Internal server error"}
-    
+      title: { $regex: new RegExp(q, "i") },
+    });
+    if (searchResults.length === 0)
+      return { status: 404, message: "Task not found", data: [] };
+    return { status: 200, message: "Search result found", data: searchResults };
+  } catch (error: any) {
+    // return {status: 500, message: "Internal server error"}
+    throw new Error(error.message);
   }
-}
+};

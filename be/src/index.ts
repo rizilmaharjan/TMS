@@ -11,7 +11,8 @@ import { env } from "./config";
 import userRoutes from "./user";
 import taskRoutes from "./task";
 import authRoutes from "./auth";
-
+import { appError } from "./utils/appError";
+import { errorMiddleware } from "./middleware/error-handler";
 
 databaseConnection();
 const app: Express = express();
@@ -22,31 +23,36 @@ app.use(bodyParser.json());
 app.use(express.static("public")); //used to serve static files
 
 const server = http.createServer(app);
-const io =  new Server(server, {
+const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
     methods: ["GET", "POST"],
   },
 });
 io.on("connection", (socket) => {
-  
-   socket.on("login",(username)=>{
-    console.log(username)
-    socket.join(username)
-   })
-
-   socket.on("assignTask",({message, assignedBy, assignedTo})=>{
-    console.log(message)
-    console.log(assignedTo)
-    io.to(assignedTo).emit("getTask", message)
-   })
+  socket.on("login", (username) => {
+    console.log(username);
+    socket.join(username);
   });
+
+  socket.on("assignTask", ({ message, assignedBy, assignedTo }) => {
+    console.log(message);
+    console.log(assignedTo);
+    io.to(assignedTo).emit("getTask", message);
+  });
+});
 
 app.use("/api", userRoutes());
 app.use("/api", authRoutes());
 app.use("/api", taskRoutes());
 
+// handling unhandled routes
+app.all("*", (req, res, next) => {
+  next(new appError(404, `Can't find ${req.originalUrl} on this server!`));
+});
 
+// error handling middleware
+app.use(errorMiddleware);
 
 server.listen(port, () => {
   console.log(` Server is running at http://localhost:${env.PORT}`);

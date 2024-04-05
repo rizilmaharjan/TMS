@@ -41,8 +41,10 @@ export const loginUser = async (user: TLoginSchema["body"]) => {
       message: "User logged in successfully",
       data: findUser,
     };
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
+  } catch (error: any) {
+    // console.log("repository catch block");
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
 };
 
@@ -57,23 +59,28 @@ export const getUser = async (user: TUser) => {
       message: "User fetched successfully",
       data: getSingleUser,
     };
-  } catch (error) {
-    return { status: 500, message: "Internal server error" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal server error" };
   }
 };
-export const getAllUsers = async (user: TUser, filters?:any) => {
+export const getAllUsers = async (user: TUser, filters?: any) => {
   try {
     const { username } = user;
 
-    const getUsers = await userModel.find({ username: { $ne: username },...(filters ? filters : {}) });
+    const getUsers = await userModel.find({
+      username: { $ne: username },
+      ...(filters ? filters : {}),
+    });
     if (!getUsers) return { status: 404, message: "Users don't exist" };
     return {
       status: 200,
       message: "Users fetched successfully",
       data: getUsers,
     };
-  } catch (error) {
-    return { status: 500, message: error };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: error };
   }
 };
 
@@ -86,8 +93,9 @@ export const getUserEmail = async (email: string) => {
       message: "User fetched successfully",
       user: userEmail,
     };
-  } catch (error) {
-    return { status: 500, messsage: "Internal Server Error" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, messsage: "Internal Server Error" };
   }
 };
 
@@ -97,63 +105,69 @@ export const editUser = async (user: TRegisterSchema["body"], id: string) => {
     if (!findUser) return { status: 404, message: "User does not exist" };
     // const hashedPassword = await bcrypt.hash(findUser.password, 12)
 
-    const EditUser = await userModel
-      .findOneAndUpdate(
-        { _id: id },
-        {
-         $set:{ ...user}
-        },
-        { new: true, select: "-password" }
-      )
+    const EditUser = await userModel.findOneAndUpdate(
+      { _id: id },
+      {
+        $set: { ...user },
+      },
+      { new: true, select: "-password" }
+    );
     if (!EditUser) return { status: 404, message: "user not found" };
-    console.log("edited user", EditUser)
+    console.log("edited user", EditUser);
     return {
       status: 200,
       message: "User updated successfully",
       editedUser: EditUser,
     };
-  } catch (error) {
-    return { status: 500, message: "Internal Server Error" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal Server Error" };
   }
 };
 
-export const resetUserPassword = async(user:TUserResetPassword, body:TResetPassword)=>{
+export const resetUserPassword = async (
+  user: TUserResetPassword,
+  body: TResetPassword
+) => {
   try {
-    const userEmail = await userModel.findOne({_id:user.id })
-    if(!userEmail) return {status:404, message: "user not found"}
-    console.log("this is useremail",userEmail)
-    console.log("this is userPassword",body.password)
-    const hashedPassword = await bcrypt.hash(body.password, 12)
+    const userEmail = await userModel.findOne({ _id: user.id });
+    if (!userEmail) return { status: 404, message: "user not found" };
+    console.log("this is useremail", userEmail);
+    console.log("this is userPassword", body.password);
+    const hashedPassword = await bcrypt.hash(body.password, 12);
     const updatePassword = await userModel.findOneAndUpdate(
-      {_id: user.id},
+      { _id: user.id },
       {
-        password: hashedPassword
-
+        password: hashedPassword,
       },
-      {new: true}
-
-    )  
-    if(updatePassword) return {status:200, message:"password updated successfully"}  
-  } catch (error) {
-    return {status:500, message:"Error occured"}
-    
+      { new: true }
+    );
+    if (updatePassword)
+      return { status: 200, message: "password updated successfully" };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Error occured" };
   }
-}
+};
 
-export const editProfileImage = async(id:string, imagePath:string)=>{
+export const editProfileImage = async (id: string, imagePath: string) => {
   try {
     const user = await userModel.findById(id);
-    if(!user) return { status:404, message:"User not found"}
-    const profileImage = "http://localhost:8000/uploads/" + imagePath
-    const editProfileImage = await userModel.findById(id).select("-password")
-    if(!editProfileImage) return {status: 404, message: "No such profile found"}
-    editProfileImage.profileImage = profileImage
-    const savedEditedProfileImage = await editProfileImage.save()
-    console.log("editedprofileimage", savedEditedProfileImage)
-    return {status: 200, message:"Profile edited successfully", data: savedEditedProfileImage}
-  } catch (error) {
-    return { status: 500, message: "Internal Server Error" };
-
-    
+    if (!user) return { status: 404, message: "User not found" };
+    const profileImage = "http://localhost:8000/uploads/" + imagePath;
+    const editProfileImage = await userModel.findById(id).select("-password");
+    if (!editProfileImage)
+      return { status: 404, message: "No such profile found" };
+    editProfileImage.profileImage = profileImage;
+    const savedEditedProfileImage = await editProfileImage.save();
+    console.log("editedprofileimage", savedEditedProfileImage);
+    return {
+      status: 200,
+      message: "Profile edited successfully",
+      data: savedEditedProfileImage,
+    };
+  } catch (error: any) {
+    throw new Error(error.message);
+    // return { status: 500, message: "Internal Server Error" };
   }
-}
+};
